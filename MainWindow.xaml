@@ -1,0 +1,323 @@
+<Window x:Class="SterilizationGenie.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:views="clr-namespace:SterilizationGenie.Views"
+        Title="Sterilization Genie"
+        WindowStartupLocation="CenterScreen"
+        WindowState="Maximized"
+        ResizeMode="CanResize"
+        Background="#1C1C1C">
+
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+
+        <!-- Right-click context menu on SG logo -->
+        <ContextMenu x:Key="SgMenu" Background="#252525" BorderBrush="#444444" BorderThickness="1">
+            <MenuItem Header="Configure files" Command="{Binding ShowSettingsCommand}" Foreground="White" />
+            <MenuItem Header="Reset configuration" Command="{Binding ResetConfigurationCommand}" Foreground="White" />
+        </ContextMenu>
+
+        <!-- Online / Offline pill toggle -->
+        <Style x:Key="OnlineToggleStyle" TargetType="ToggleButton">
+            <Setter Property="Cursor"   Value="Hand" />
+            <Setter Property="Height"   Value="26" />
+            <Setter Property="MinWidth" Value="72" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="Bd" CornerRadius="13" Padding="8,3"
+                                Background="#2A1A1A" BorderBrush="#E06262" BorderThickness="1">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <Ellipse x:Name="Dot" Width="7" Height="7" Fill="#E06262"
+                                         VerticalAlignment="Center" Margin="0,0,5,0" />
+                                <TextBlock x:Name="Lbl" Text="Offline"
+                                           Foreground="#E06262" FontSize="11" FontWeight="SemiBold"
+                                           VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Bd"  Property="Background"  Value="#1A2A1A" />
+                                <Setter TargetName="Bd"  Property="BorderBrush" Value="#48D964" />
+                                <Setter TargetName="Dot" Property="Fill"        Value="#48D964" />
+                                <Setter TargetName="Lbl" Property="Text"        Value="Online" />
+                                <Setter TargetName="Lbl" Property="Foreground"  Value="#48D964" />
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.85" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid Background="#1C1C1C">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="26" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <!-- ═══ LEFT NAV RAIL ═══ -->
+        <Border Grid.Column="0" Background="#1A1A1A">
+            <StackPanel>
+                <ToggleButton Style="{StaticResource RailToggleButtonStyle}"
+                              Command="{Binding ShowDashboardCommand}"
+                              IsChecked="{Binding IsDashboardSelected, Mode=OneWay}"
+                              Content="Dashboard" />
+                <ToggleButton Style="{StaticResource RailToggleButtonStyle}"
+                              Command="{Binding ShowAlertsCommand}"
+                              IsChecked="{Binding IsAlertsSelected, Mode=OneWay}"
+                              Content="Alerts" />
+                <ToggleButton Style="{StaticResource RailToggleButtonStyle}"
+                              Command="{Binding ShowSummaryCommand}"
+                              IsChecked="{Binding IsSummarySelected, Mode=OneWay}"
+                              Content="Summary" />
+            </StackPanel>
+        </Border>
+
+        <!-- ═══ CENTRE ═══ -->
+        <Grid Grid.Column="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="44" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <!-- TOP BAR -->
+            <Border Grid.Row="0" Background="#1A1A1A" BorderBrush="#333333" BorderThickness="0,0,0,1">
+                <DockPanel VerticalAlignment="Center" Margin="0,0,8,0">
+
+                    <!-- SG logo: left-click = dashboard, right-click = context menu -->
+                    <Button DockPanel.Dock="Left"
+                            Width="44" Background="Transparent" BorderBrush="Transparent"
+                            Command="{Binding ShowDashboardCommand}"
+                            ContextMenu="{StaticResource SgMenu}"
+                            Cursor="Hand" Padding="0" BorderThickness="0">
+                        <TextBlock Text="SG" FontSize="18" FontWeight="Bold" Foreground="White"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Button>
+
+                    <!-- Online/Offline toggle pill -->
+                    <ToggleButton DockPanel.Dock="Left"
+                                  Style="{StaticResource OnlineToggleStyle}"
+                                  IsChecked="{Binding IsOnline, Mode=OneWay}"
+                                  Command="{Binding ToggleOnlineCommand}"
+                                  VerticalAlignment="Center" Margin="2,0,6,0" />
+
+                    <!-- Workbook name -->
+                    <TextBlock DockPanel.Dock="Left"
+                               Text="{Binding ImportedWorkbookName}"
+                               Foreground="#555555" FontSize="11"
+                               VerticalAlignment="Center" Margin="0,0,8,0"
+                               MaxWidth="200" TextTrimming="CharacterEllipsis" />
+
+                    <!-- Right: version -->
+                    <TextBlock DockPanel.Dock="Right" Text="v2.0.0.11"
+                               Foreground="#444444" FontSize="11"
+                               VerticalAlignment="Center" Margin="6,0,0,0" />
+
+
+
+                    <!-- Sort with Time arrow placeholder -->
+                    <TextBlock DockPanel.Dock="Right" Text="→| Sort with Time"
+                               Foreground="#555555" FontSize="11"
+                               VerticalAlignment="Center" Margin="6,0,10,0" />
+
+                    <!-- Time-range chips (fills remaining space, centred) -->
+                    <ItemsControl HorizontalAlignment="Center" VerticalAlignment="Center"
+                                  ItemsSource="{Binding TimeRangeOptions}"
+                                  Visibility="{Binding ShowDashboardView, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <ToggleButton Content="{Binding Label}"
+                                              IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                              Command="{Binding DataContext.SelectTimeRangeCommand,
+                                                        RelativeSource={RelativeSource AncestorType=Window}}"
+                                              CommandParameter="{Binding}"
+                                              Style="{StaticResource TopChipStyle}" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </DockPanel>
+            </Border>
+
+            <!-- PAGE CONTENT (no SettingsView — Settings = popup only) -->
+            <Border Grid.Row="1" Background="#1C1C1C">
+                <Grid>
+                    <views:DashboardView  Visibility="{Binding ShowDashboardView,  Converter={StaticResource BoolToVisibilityConverter}}" />
+                    <!-- Embedded Alerts View -->
+                    <Border Visibility="{Binding ShowAlertsView, Converter={StaticResource BoolToVisibilityConverter}}" Background="#FF282828" Padding="20">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            
+                            <!-- Header Row -->
+                            <Border Grid.Row="0" Margin="0,0,0,10" BorderBrush="#FF555555" BorderThickness="0,0,0,1" Padding="0,0,0,8">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="60" />
+                                        <ColumnDefinition Width="60" />
+                                        <ColumnDefinition Width="60" />
+                                        <ColumnDefinition Width="60" />
+                                        <ColumnDefinition Width="60" />
+                                        <ColumnDefinition Width="60" />
+                                        <ColumnDefinition Width="60" />
+                                        <ColumnDefinition Width="60" />
+                                        <ColumnDefinition Width="60" />
+                                        <ColumnDefinition Width="60" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="70" />
+                                    </Grid.ColumnDefinitions>
+                                    
+                                    <TextBlock Grid.Column="0" Text="Alert Type" Foreground="White" FontWeight="Bold" FontSize="11" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center"/>
+                                    <TextBlock Grid.Column="1" Text="Alarm Tripped" TextWrapping="Wrap" Foreground="White" FontWeight="Bold" FontSize="11" HorizontalAlignment="Center" TextAlignment="Center"/>
+                                    <TextBlock Grid.Column="2" Text="Ext. Power" TextWrapping="Wrap" Foreground="White" FontWeight="Bold" FontSize="11" HorizontalAlignment="Center" TextAlignment="Center"/>
+                                    <TextBlock Grid.Column="3" Text="Low Temp." TextWrapping="Wrap" Foreground="White" FontWeight="Bold" FontSize="11" HorizontalAlignment="Center" TextAlignment="Center"/>
+                                    <TextBlock Grid.Column="4" Text="Low Press." TextWrapping="Wrap" Foreground="White" FontWeight="Bold" FontSize="11" HorizontalAlignment="Center" TextAlignment="Center"/>
+                                    <TextBlock Grid.Column="5" Text="Short Cycle" TextWrapping="Wrap" Foreground="White" FontWeight="Bold" FontSize="11" HorizontalAlignment="Center" TextAlignment="Center"/>
+                                    <TextBlock Grid.Column="6" Text="Peak Duration" TextWrapping="Wrap" Foreground="White" FontWeight="Bold" FontSize="11" HorizontalAlignment="Center" TextAlignment="Center"/>
+                                    <TextBlock Grid.Column="7" Text="Active Step" TextWrapping="Wrap" Foreground="White" FontWeight="Bold" FontSize="11" HorizontalAlignment="Center" TextAlignment="Center"/>
+                                    <TextBlock Grid.Column="8" Text="Threshold" TextWrapping="Wrap" Foreground="White" FontWeight="Bold" FontSize="11" HorizontalAlignment="Center" TextAlignment="Center"/>
+                                    <TextBlock Grid.Column="9" Text="Priority Level" TextWrapping="Wrap" Foreground="White" FontWeight="Bold" FontSize="11" HorizontalAlignment="Center" TextAlignment="Center"/>
+                                    <TextBlock Grid.Column="10" Text="Corrective SOP" Foreground="White" FontWeight="Bold" FontSize="11" HorizontalAlignment="Center"/>
+                                    <TextBlock Grid.Column="11" Text="Action Taken" TextWrapping="Wrap" Foreground="White" FontWeight="Bold" FontSize="11" HorizontalAlignment="Center" TextAlignment="Center"/>
+                                </Grid>
+                            </Border>
+                            
+                            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                                <ItemsControl ItemsSource="{Binding AlertTiles}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Background="#333333" BorderThickness="0" Margin="0,0,0,1" Padding="5,15">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="60" />
+                                                        <ColumnDefinition Width="60" />
+                                                        <ColumnDefinition Width="60" />
+                                                        <ColumnDefinition Width="60" />
+                                                        <ColumnDefinition Width="60" />
+                                                        <ColumnDefinition Width="60" />
+                                                        <ColumnDefinition Width="60" />
+                                                        <ColumnDefinition Width="60" />
+                                                        <ColumnDefinition Width="60" />
+                                                        <ColumnDefinition Width="60" />
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="70" />
+                                                    </Grid.ColumnDefinitions>
+                                                    
+                                                    <!-- Converters/Styles to map 'True/False' to Green Solid or Grey Empty Circle (done inline here with Triggers) -->
+                                                    
+                                                    <TextBlock Grid.Column="0" Text="{Binding ClassCode}" Foreground="#FFEAEAEA" FontWeight="Bold" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    
+                                                    <!-- Circles logic -->
+                                                    <Ellipse Grid.Column="1" Width="10" Height="10" Stroke="#555555" StrokeThickness="2" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                        <Ellipse.Style>
+                                                            <Style TargetType="Ellipse">
+                                                                <Setter Property="Fill" Value="Transparent"/>
+                                                                <Style.Triggers><DataTrigger Binding="{Binding SameMTSU}" Value="True"><Setter Property="Fill" Value="#00BB00"/></DataTrigger></Style.Triggers>
+                                                            </Style>
+                                                        </Ellipse.Style>
+                                                    </Ellipse>
+                                                    <Ellipse Grid.Column="2" Width="10" Height="10" Stroke="#555555" StrokeThickness="2" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                        <Ellipse.Style>
+                                                            <Style TargetType="Ellipse">
+                                                                <Setter Property="Fill" Value="Transparent"/>
+                                                                <Style.Triggers><DataTrigger Binding="{Binding SamePosition}" Value="True"><Setter Property="Fill" Value="#00BB00"/></DataTrigger></Style.Triggers>
+                                                            </Style>
+                                                        </Ellipse.Style>
+                                                    </Ellipse>
+                                                    <Ellipse Grid.Column="3" Width="10" Height="10" Stroke="#555555" StrokeThickness="2" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                        <Ellipse.Style>
+                                                            <Style TargetType="Ellipse">
+                                                                <Setter Property="Fill" Value="Transparent"/>
+                                                                <Style.Triggers><DataTrigger Binding="{Binding SameUVBay}" Value="True"><Setter Property="Fill" Value="#00BB00"/></DataTrigger></Style.Triggers>
+                                                            </Style>
+                                                        </Ellipse.Style>
+                                                    </Ellipse>
+                                                    <Ellipse Grid.Column="4" Width="10" Height="10" Stroke="#555555" StrokeThickness="2" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                        <Ellipse.Style>
+                                                            <Style TargetType="Ellipse">
+                                                                <Setter Property="Fill" Value="Transparent"/>
+                                                                <Style.Triggers><DataTrigger Binding="{Binding SameExtTube}" Value="True"><Setter Property="Fill" Value="#00BB00"/></DataTrigger></Style.Triggers>
+                                                            </Style>
+                                                        </Ellipse.Style>
+                                                    </Ellipse>
+                                                    <Ellipse Grid.Column="5" Width="10" Height="10" Stroke="#555555" StrokeThickness="2" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                        <Ellipse.Style>
+                                                            <Style TargetType="Ellipse">
+                                                                <Setter Property="Fill" Value="Transparent"/>
+                                                                <Style.Triggers><DataTrigger Binding="{Binding SameCuvette}" Value="True"><Setter Property="Fill" Value="#00BB00"/></DataTrigger></Style.Triggers>
+                                                            </Style>
+                                                        </Ellipse.Style>
+                                                    </Ellipse>
+                                                    
+                                                    <TextBlock Grid.Column="6" Text="{Binding RepeatMinutes}" Foreground="#F4B740" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    <TextBlock Grid.Column="7" Text="{Binding RepeatCount}" Foreground="#F4B740" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    <TextBlock Grid.Column="8" Text="{Binding AwardPoints}" Foreground="#F4B740" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    <TextBlock Grid.Column="9" Text="{Binding Priority}" Foreground="#F4B740" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    
+                                                    <TextBlock Grid.Column="10" Text="{Binding SuggestedAction}" Foreground="#F4B740" FontSize="11" TextWrapping="Wrap" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                    <TextBlock Grid.Column="11" Text="📑" Foreground="#F4B740" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{Binding ActionTaken, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </Grid>
+                    </Border>
+                    <views:SummaryView    Visibility="{Binding ShowSummaryView,    Converter={StaticResource BoolToVisibilityConverter}}" />
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- ═══ RIGHT SIDEBAR (Removed per Target UI) ═══ -->
+
+        <!-- ═══ CONFIGURATION POPUP OVERLAY ═══ -->
+        <Border Grid.ColumnSpan="3" Background="#CC000000"
+                Visibility="{Binding IsConfigurationPopupOpen, Converter={StaticResource BoolToVisibilityConverter}}">
+            <views:ConfigurationPopup />
+        </Border>
+
+        <!-- ═══ LOGIN OVERLAY ═══ -->
+        <Border Grid.ColumnSpan="3" Background="#EE111111"
+                Visibility="{Binding ShowLoginOverlay, Converter={StaticResource BoolToVisibilityConverter}}">
+            <Grid>
+                <Border Width="420" Padding="30"
+                        Background="#222222" BorderBrush="#444444" BorderThickness="1"
+                        HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <StackPanel>
+                        <TextBlock Text="Sterilization Genie" FontSize="24" FontWeight="Bold"
+                                   HorizontalAlignment="Center" />
+                        <TextBlock Margin="0,6,0,0" TextAlignment="Center"
+                                   Text="Enter your credentials to continue."
+                                   Foreground="#888888" TextWrapping="Wrap" FontSize="13" />
+                        <TextBlock Margin="0,22,0,5" Text="Username" FontSize="12" Foreground="#888888" />
+                        <TextBox Text="{Binding LoginUsername, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+                        <TextBlock Margin="0,12,0,5" Text="Password" FontSize="12" Foreground="#888888" />
+                        <PasswordBox x:Name="LoginPasswordBox"
+                                     PasswordChanged="LoginPasswordBox_OnPasswordChanged"
+                                     KeyDown="LoginPasswordBox_OnKeyDown" />
+                        <TextBlock Margin="0,10,0,0" Text="{Binding LoginErrorMessage}"
+                                   Foreground="#E06262" TextWrapping="Wrap" />
+                        <Button Margin="0,18,0,0" Height="38"
+                                Style="{StaticResource AccentButtonStyle}"
+                                IsDefault="True" Command="{Binding LoginCommand}"
+                                Content="Login" FontSize="14" />
+                        <TextBlock Margin="0,10,0,0" Text="Default: admin / admin"
+                                   Foreground="#555555" TextAlignment="Center" FontSize="12" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>
