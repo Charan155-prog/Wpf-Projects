@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<OutputType>WinExe</OutputType>
+		<TargetFramework>net8.0-windows7.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<UseWPF>true</UseWPF>
+		<RestoreIgnoreFailedSources>true</RestoreIgnoreFailedSources>
+		<AcceptNPOIOSMFLicense>true</AcceptNPOIOSMFLicense>
+		<NoWarn>$(NoWarn);NU1701</NoWarn>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="LiveCharts" Version="0.9.7" />
+		<PackageReference Include="LiveCharts.Wpf" Version="0.9.7" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.25" />
+		<PackageReference Include="NPOI" Version="2.8.0" />
+		<!-- Used only by WorkbookImportService's live delta-read path (ImportNewRows).
+		     NPOI's XSSFWorkbook builds a full in-memory DOM of the entire .xlsx on every
+		     construction, so re-reading it on every ~1s online tick re-parses the whole,
+		     ever-growing workbook each time. ExcelDataReader streams rows SAX-style and
+		     lets us skip straight past already-seen rows without materializing them, so
+		     per-tick cost scales with new rows instead of total rows. NPOI is still used
+		     everywhere else (offline import, exports) — unaffected by this change. -->
+		<PackageReference Include="ExcelDataReader" Version="3.7.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Content Include="MLInference\03_inference_V.1.1.0.py;MLInference\inference_session_worker.py;MLInference\models\**\*">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>
+	</ItemGroup>
+
+
+</Project>
