@@ -1,0 +1,6 @@
+-r requirements.txt
+-e ../ML-Inference-files/s_sam3/sam3
+# The supplied SAM3 source imports these runtime helpers through its tracker
+# and COCO data modules, but does not declare them in its base pyproject.
+einops>=0.8.0
+pycocotools>=2.0.10

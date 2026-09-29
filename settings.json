@@ -1,0 +1,7 @@
+{
+  "datasetRoot": "D:\Charan\SAIL-Outputs",
+  "modelsDir": "C:/CDI/models",
+  "exportDir": "C:/CDI/exports",
+  "inferenceDir": "C:/CDI/inference/results",
+  "annotationCache": "C:/CDI/cache/annotations"
+}

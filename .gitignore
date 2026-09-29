@@ -1,0 +1,7 @@
+frontend/node_modules/
+frontend/.next/
+backend/workspace/
+ml-assets/sam3/
+ml-assets/models--facebook--sam3/
+__pycache__/
+*.pyc
